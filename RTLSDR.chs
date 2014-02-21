@@ -1,5 +1,45 @@
 {-# LANGUAGE EmptyDataDecls #-}
-module RTLSDR where
+module RTLSDR (
+    getDeviceCount,
+    getDeviceName,
+    getDeviceUSBString,
+    GIBSError(..),
+    getIndexBySerial,
+    RTLSDR,
+    open,
+    close,
+    setXtalFreq,
+    getXtalFreq,
+    getUSBStrings,
+    EEPROMError(..),
+    writeEEPROM,
+    readEEPROM,
+    setCenterFreq,
+    getCenterFreq,
+    setFreqCorrection,
+    getFreqCorrection,
+    Tuner(..),
+    getTunerType,
+    getTunerGains,
+    setTunerGain,
+    getTunerGain,
+    setTunerIFGain,
+    setTunerGainMode,
+    setSampleRate,
+    getSampleRate,
+    setTestMode,
+    setAGCMode,
+    DirectSamplingMode(..),
+    setDirectSampling,
+    getDirectSampling,
+    setOffsetTuning,
+    getOffsetTuning,
+    resetBuffer,
+    readSync,
+    ReadCallback,
+    readAsync,
+    cancelAsync
+    ) where
 
 #include <rtl-sdr.h>
 
