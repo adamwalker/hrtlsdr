@@ -23,11 +23,12 @@ source-repository head
     location: https://github.com/adamwalker/hrtlsdr
 
 library
-  exposed-modules:     RTLSDR
-  -- other-modules:       
-  other-extensions:    EmptyDataDecls
-  build-depends:       base >=4.6 && <4.7, array >=0.4 && <0.5
-  -- hs-source-dirs:      
-  build-tools:         c2hs
-  default-language:    Haskell2010
-  extra-libraries:     rtlsdr
+    exposed-modules:     RTLSDR
+    -- other-modules:       
+    other-extensions:    EmptyDataDecls
+    build-depends:       base >=4.6 && <4.7, array >=0.4 && <0.5
+    -- hs-source-dirs:      
+    build-tools:         c2hs
+    default-language:    Haskell2010
+    extra-libraries:     rtlsdr
+    -- ghc-options:         -Wall
