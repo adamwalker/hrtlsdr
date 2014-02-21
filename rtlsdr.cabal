@@ -4,16 +4,23 @@
 name:                rtlsdr
 version:             0.1.0.0
 synopsis:            Bindings to librtlsdr
--- description:         
+description:         
+    Bindings to librtlsdr. Turns your Realtek RTL2832 based DVB dongle into a SDR receiver. 
+    .
+    For more information see: http://sdr.osmocom.org/trac/wiki/rtl-sdr
 license:             BSD3
 license-file:        LICENSE
 author:              Adam Walker
 maintainer:          adamwalker10@gmail.com
--- copyright:           
--- category:            
+copyright:           2014 Adam Walker
+category:            Software defined radio
 build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
+
+source-repository head
+    type: git
+    location: https://github.com/adamwalker/hrtlsdr
 
 library
   exposed-modules:     RTLSDR
