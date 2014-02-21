@@ -17,10 +17,10 @@ import Data.Array.MArray
 import Data.Array.Storable
 
 foreign import ccall unsafe "rtlsdr_get_device_count"
-    c_getDeviceCount :: IO (CUInt)
+    c_getDeviceCount :: IO CUInt
 
 getDeviceCount :: IO Word32
-getDeviceCount = liftM fromIntegral $ c_getDeviceCount
+getDeviceCount = liftM fromIntegral c_getDeviceCount
 
 foreign import ccall unsafe "rtlsdr_get_device_name"
     c_rtlsdrGetDeviceName :: CUInt -> IO CString
@@ -29,7 +29,7 @@ getDeviceName :: Word32 -> IO String
 getDeviceName index = c_rtlsdrGetDeviceName (fromIntegral index) >>= peekCString 
 
 foreign import ccall unsafe "rtlsdr_get_device_usb_strings"
-    c_getDeviceUSBStrings :: CUInt -> Ptr CChar -> Ptr CChar -> Ptr CChar -> IO (CInt)
+    c_getDeviceUSBStrings :: CUInt -> Ptr CChar -> Ptr CChar -> Ptr CChar -> IO CInt
 
 getDeviceUSBString :: Word32 -> IO (Maybe (String, String, String))
 getDeviceUSBString index = 
@@ -59,7 +59,7 @@ toGIBSError (-2) = NoDevices
 toGIBSError (-3) = NoMatching
 
 getIndexBySerial :: String -> IO (Either GIBSError Int)
-getIndexBySerial serial = liftM (func . fromIntegral) $ withCString serial $ c_getIndexBySerial 
+getIndexBySerial serial = liftM (func . fromIntegral) $ withCString serial c_getIndexBySerial 
     where func res 
             | res < 0   = Left (toGIBSError res)
             | otherwise = Right res
@@ -197,11 +197,10 @@ getTunerGains (RTLSDR ptr) = do
     num <- c_getTunerGains ptr nullPtr 
     case num < 0 of
         True -> return Nothing
-        False -> do
-            allocaArray (fromIntegral num) $ \ptrg -> do
-                c_getTunerGains ptr ptrg
-                res <- peekArray (fromIntegral num) ptrg
-                return $ Just $ map fromIntegral res
+        False -> allocaArray (fromIntegral num) $ \ptrg -> do
+            c_getTunerGains ptr ptrg
+            res <- peekArray (fromIntegral num) ptrg
+            return $ Just $ map fromIntegral res
 
 foreign import ccall unsafe "rtlsdr_set_tuner_gain"
     c_setTunerGain :: Ptr CRTLSDR -> CInt -> IO CInt
@@ -299,8 +298,8 @@ getOffsetTuning (RTLSDR ptr) = do
     case res < 0 of
         True -> return Nothing
         False -> case res of
-            0 -> return $ Just $ False
-            1 -> return $ Just $ True
+            0 -> return $ Just False
+            1 -> return $ Just True
 
 foreign import ccall unsafe "rtlsdr_reset_buffer"
     c_resetBuffer :: Ptr CRTLSDR -> IO CInt
