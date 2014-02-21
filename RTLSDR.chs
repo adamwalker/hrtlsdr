@@ -296,7 +296,7 @@ foreign import ccall unsafe "rtlsdr_set_agc_mode"
     c_setAGCMode :: Ptr CRTLSDR -> CInt -> IO CInt
 
 setAGCMode :: RTLSDR -> Bool -> IO Bool
-setAGCMode (RTLSDR ptr) on = liftM (==0) $ c_setTestmode ptr (b2int on)
+setAGCMode (RTLSDR ptr) on = liftM (==0) $ c_setAGCMode ptr (b2int on)
     where b2int False = 0
           b2int True  = 1
 
