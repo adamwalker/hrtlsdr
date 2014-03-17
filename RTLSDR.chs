@@ -350,14 +350,10 @@ resetBuffer (RTLSDR ptr) = liftM fromIntegral $ c_resetBuffer ptr
 foreign import ccall unsafe "rtlsdr_read_sync"
     c_readSync :: Ptr CRTLSDR -> Ptr CUChar -> CInt -> Ptr CInt -> IO CInt
 
-readSync :: RTLSDR -> Int -> IO (Maybe (StorableArray Int CUChar))
-readSync (RTLSDR ptr) len = do
-    array <- newArray_ (0, len)
-    res <- withStorableArray array $ \aptr -> 
-        alloca $ c_readSync ptr aptr (fromIntegral len) 
-    case res < 0 of
-        True  -> return Nothing
-        False -> return $ Just array
+readSync :: RTLSDR -> Ptr CUChar -> Int -> IO Bool
+readSync (RTLSDR ptr) aptr len = do
+    res <- alloca $ c_readSync ptr aptr (fromIntegral len) 
+    return $ res >= 0 
 
 type ReadCallback = Ptr CUChar -> Word32 -> Ptr CInt -> IO ()
 
