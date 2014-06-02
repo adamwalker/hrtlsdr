@@ -53,8 +53,6 @@ import Foreign.Storable
 import Data.Word
 import Data.Int
 import Control.Monad
-import Data.Array.MArray
-import Data.Array.Storable
 
 justWhenM :: Monad m => Bool -> m a -> m (Maybe a)
 justWhenM cond act = if cond then liftM Just act else return Nothing
