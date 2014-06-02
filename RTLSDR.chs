@@ -56,6 +56,13 @@ import Control.Monad
 import Data.Array.MArray
 import Data.Array.Storable
 
+justWhenM :: Monad m => Bool -> m a -> m (Maybe a)
+justWhenM cond act = if cond then liftM Just act else return Nothing
+
+b2int :: Num i => Bool -> i
+b2int False = 0
+b2int True  = 1
+
 foreign import ccall unsafe "rtlsdr_get_device_count"
     c_getDeviceCount :: IO CUInt
 
@@ -77,17 +84,16 @@ getDeviceUSBString index =
     allocaArray 256 $ \pp -> 
     allocaArray 256 $ \sp -> do
         res <- c_getDeviceUSBStrings (fromIntegral index) mp pp sp 
-        case res of 
-            0 -> do
-                m <- peekCString mp
-                p <- peekCString pp
-                s <- peekCString sp
-                return $ Just (m, p, s)
-            _ -> return Nothing
+        justWhenM (res==0) $ do
+            m <- peekCString mp
+            p <- peekCString pp
+            s <- peekCString sp
+            return (m, p, s)
         
 foreign import ccall unsafe "rtlsdr_get_index_by_serial"
     c_getIndexBySerial :: CString -> IO CInt
 
+-- Get Index By Serial Error
 data GIBSError = NameNull
                | NoDevices
                | NoMatching
@@ -97,6 +103,7 @@ toGIBSError :: Int -> GIBSError
 toGIBSError (-1) = NameNull
 toGIBSError (-2) = NoDevices
 toGIBSError (-3) = NoMatching
+toGIBSError _    = error "rtlsdr_get_index_by_serial returned invalid error code"
 
 getIndexBySerial :: String -> IO (Either GIBSError Int)
 getIndexBySerial serial = liftM (func . fromIntegral) $ withCString serial c_getIndexBySerial 
@@ -113,11 +120,9 @@ foreign import ccall unsafe "rtlsdr_open"
 open :: Word32 -> IO (Maybe RTLSDR)
 open index = alloca $ \ptr -> do
     res <- c_open ptr (fromIntegral index)
-    case res < 0 of
-        True  -> return Nothing
-        False -> do
-            res <- peek ptr
-            return $ Just $ RTLSDR res
+    justWhenM (res >= 0) $ do
+        res <- peek ptr
+        return $ RTLSDR res
 
 foreign import ccall unsafe "rtlsdr_close"
     c_close :: Ptr CRTLSDR -> IO CInt
@@ -139,12 +144,10 @@ getXtalFreq (RTLSDR ptr) =
     alloca $ \rp -> 
     alloca $ \tp -> do
         res <- c_getXtalFreq ptr rp tp
-        case res of
-            0 -> return Nothing
-            _ -> do
-                r <- peek rp
-                t <- peek tp
-                return $ Just (fromIntegral r, fromIntegral t)
+        justWhenM (res /= 0) $ do
+            r <- peek rp
+            t <- peek tp
+            return (fromIntegral r, fromIntegral t)
 
 foreign import ccall unsafe "rtlsdr_get_usb_strings"
     c_getUSBStrings :: Ptr CRTLSDR -> Ptr CChar -> Ptr CChar -> Ptr CChar -> IO CInt
@@ -155,13 +158,11 @@ getUSBStrings (RTLSDR ptr) =
     allocaArray 256 $ \pp -> 
     allocaArray 256 $ \sp -> do
         res <- c_getUSBStrings ptr mp pp sp 
-        case res of 
-            0 -> do
-                m <- peekCString mp
-                p <- peekCString pp
-                s <- peekCString sp
-                return $ Just (m, p, s)
-            _ -> return Nothing
+        justWhenM (res == 0) $ do
+            m <- peekCString mp
+            p <- peekCString pp
+            s <- peekCString sp
+            return (m, p, s)
 
 data EEPROMError = InvalidHandle
                  | SizeExceeded
@@ -172,6 +173,7 @@ toEEPROMError :: Int -> EEPROMError
 toEEPROMError (-1) = InvalidHandle
 toEEPROMError (-2) = SizeExceeded
 toEEPROMError (-3) = NoEEPROM
+toEEPROMError _    = error "librtlsdr returned invalid EEPROM error code"
 
 foreign import ccall unsafe "rtlsdr_write_eeprom"
     c_writeEEPROM :: Ptr CRTLSDR -> Ptr CUChar -> CUChar -> CUShort -> IO CInt
@@ -180,7 +182,7 @@ writeEEPROM :: RTLSDR -> [Word8] -> Int -> IO (Maybe EEPROMError)
 writeEEPROM (RTLSDR ptr) dataa offset = 
     liftM (func . fromIntegral) $ withArrayLen (map fromIntegral dataa) $ \size ptrd -> c_writeEEPROM ptr ptrd (fromIntegral offset) (fromIntegral size)
     where func x
-            | x < 0       = Just $ toEEPROMError x
+            | x < 0     = Just $ toEEPROMError x
             | otherwise = Nothing
 
 foreign import ccall unsafe "rtlsdr_read_eeprom"
@@ -235,12 +237,11 @@ foreign import ccall unsafe "rtlsdr_get_tuner_gains"
 getTunerGains :: RTLSDR -> IO (Maybe [Int])
 getTunerGains (RTLSDR ptr) = do
     num <- c_getTunerGains ptr nullPtr 
-    case num < 0 of
-        True -> return Nothing
-        False -> allocaArray (fromIntegral num) $ \ptrg -> do
+    justWhenM (num >= 0) $ 
+        allocaArray (fromIntegral num) $ \ptrg -> do
             c_getTunerGains ptr ptrg
             res <- peekArray (fromIntegral num) ptrg
-            return $ Just $ map fromIntegral res
+            return $ map fromIntegral res
 
 foreign import ccall unsafe "rtlsdr_set_tuner_gain"
     c_setTunerGain :: Ptr CRTLSDR -> CInt -> IO CInt
@@ -267,8 +268,6 @@ foreign import ccall unsafe "rtlsdr_set_tuner_gain_mode"
 
 setTunerGainMode :: RTLSDR -> Bool -> IO Bool
 setTunerGainMode (RTLSDR ptr) mode = liftM (==0) $ c_setTunerGainMode ptr (b2int mode)
-    where b2int False = 0
-          b2int True  = 1
 
 foreign import ccall unsafe "rtlsdr_set_sample_rate"
     c_setSampleRate :: Ptr CRTLSDR -> CUInt -> IO CInt
@@ -289,16 +288,12 @@ foreign import ccall unsafe "rtlsdr_set_testmode"
 
 setTestMode :: RTLSDR -> Bool -> IO Bool
 setTestMode (RTLSDR ptr) on = liftM (==0) $ c_setTestmode ptr (b2int on)
-    where b2int False = 0
-          b2int True  = 1
 
 foreign import ccall unsafe "rtlsdr_set_agc_mode"
     c_setAGCMode :: Ptr CRTLSDR -> CInt -> IO CInt
 
 setAGCMode :: RTLSDR -> Bool -> IO Bool
 setAGCMode (RTLSDR ptr) on = liftM (==0) $ c_setAGCMode ptr (b2int on)
-    where b2int False = 0
-          b2int True  = 1
 
 data DirectSamplingMode = DSDisabled
                         | DSI
@@ -317,17 +312,14 @@ foreign import ccall unsafe "rtlsdr_get_direct_sampling"
 getDirectSampling :: RTLSDR -> IO (Maybe DirectSamplingMode)
 getDirectSampling (RTLSDR ptr) = do
     res <- c_getDirectSampling ptr
-    case res < 0 of
-        True  -> return Nothing
-        False -> return $ Just $ toEnum $ fromIntegral res
+    justWhenM (res >= 0) $ 
+        return $ toEnum $ fromIntegral res
 
 foreign import ccall unsafe "rtlsdr_set_offset_tuning"
     c_setOffsetTuning :: Ptr CRTLSDR -> CInt -> IO CInt
 
 setOffsetTuning :: RTLSDR -> Bool -> IO Bool
 setOffsetTuning (RTLSDR ptr) on = liftM (==0) $ c_setOffsetTuning ptr (b2int on)
-    where b2int False = 0
-          b2int True  = 1
 
 foreign import ccall unsafe "rtlsdr_get_offset_tuning"
     c_getOffsetTuning :: Ptr CRTLSDR -> IO CInt
@@ -335,11 +327,8 @@ foreign import ccall unsafe "rtlsdr_get_offset_tuning"
 getOffsetTuning :: RTLSDR -> IO (Maybe Bool)
 getOffsetTuning (RTLSDR ptr) = do
     res <- c_getOffsetTuning ptr
-    case res < 0 of
-        True -> return Nothing
-        False -> case res of
-            0 -> return $ Just False
-            1 -> return $ Just True
+    justWhenM (res >= 0) $ 
+        return $ res == 1
 
 foreign import ccall unsafe "rtlsdr_reset_buffer"
     c_resetBuffer :: Ptr CRTLSDR -> IO CInt
@@ -367,11 +356,9 @@ readAsync :: RTLSDR -> Word32 -> Word32 -> (Ptr CUChar -> Int -> IO ()) -> IO Bo
 readAsync (RTLSDR ptr) bufNum bufLen callback = do
     cb <- wrap f
     res <- c_readAsync ptr cb nullPtr (fromIntegral bufNum) (fromIntegral bufLen)
-    return $ g res
+    return $ res == 0
     where
     f buf len ctx = callback buf (fromIntegral len)
-    g 0 = True
-    g _ = False
 
 foreign import ccall unsafe "rtlsdr_cancel_async"
     c_cancelAsync :: Ptr CRTLSDR -> IO CInt
