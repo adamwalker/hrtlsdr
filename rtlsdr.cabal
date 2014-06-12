@@ -2,12 +2,12 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                rtlsdr
-version:             0.1.0.1
+version:             0.1.0.2
 synopsis:            Bindings to librtlsdr
 description:         
     Bindings to librtlsdr. Turns your Realtek RTL2832 based DVB dongle into a SDR receiver. 
     .
-    For more information see: http://sdr.osmocom.org/trac/wiki/rtl-sdr
+    For more information see: <http://sdr.osmocom.org/trac/wiki/rtl-sdr>
 license:             BSD3
 license-file:        LICENSE
 author:              Adam Walker
