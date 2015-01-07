@@ -6,11 +6,11 @@ For more information, see: http://sdr.osmocom.org/trac/wiki/rtl-sdr
 
 # Installation
 
-hrtlsdr is available on Hackage. Install with `cabal install rtlsdr`.
+hrtlsdr is available on [Hackage](https://hackage.haskell.org/package/rtlsdr). Install with `cabal install rtlsdr`.
 
 # Documentation
 
-See https://github.com/steve-m/librtlsdr/blob/master/include/rtl-sdr.h
+This library is a straightforward wrapper around the C library functions. See the C library documentation: https://github.com/steve-m/librtlsdr/blob/master/include/rtl-sdr.h
 
 # Usage
 
