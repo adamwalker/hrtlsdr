@@ -8,6 +8,8 @@ description:
     Bindings to librtlsdr. Turns your Realtek RTL2832 based DVB dongle into a SDR receiver. 
     .
     For more information see: <http://sdr.osmocom.org/trac/wiki/rtl-sdr>
+    .
+    This library is a straightforward wrapper around the C library functions. See the C library documentation: <https://github.com/steve-m/librtlsdr/blob/master/include/rtl-sdr.h>
 license:             BSD3
 license-file:        LICENSE
 author:              Adam Walker
