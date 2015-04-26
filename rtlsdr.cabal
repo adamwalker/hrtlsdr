@@ -30,7 +30,7 @@ library
     exposed-modules:     RTLSDR
     -- other-modules:       
     other-extensions:    EmptyDataDecls
-    build-depends:       base >=4.6 && <4.8
+    build-depends:       base >=4.6 && <4.9
     -- hs-source-dirs:      
     build-tools:         c2hs
     default-language:    Haskell2010
